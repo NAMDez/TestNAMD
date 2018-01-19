@@ -15,7 +15,6 @@ namespace eval ::namd {}
 proc ::namd::IO {params} {
     set defaults [dict create \
         isRestart       false \
-        isReplica       false \
         first_time_step undefined \
         structure       undefined \
         coordinates     undefined \
@@ -26,13 +25,8 @@ proc ::namd::IO {params} {
     ::namd::tk::dict::assertDictKeyLegal $defaults $params "::namd::IO"
     set p [dict merge $defaults $params]
 
-    if {[string is true [dict get $p isReplica]]} {
-        set input_prefix  [format [dict get $p input_prefix] [myReplica]]
-        set output_prefix [format [dict get $p output_prefix] [myReplica]]
-    } else {
-        set input_prefix  [dict get $p input_prefix]
-        set output_prefix [dict get $p output_prefix]
-    }
+    set input_prefix  [dict get $p input_prefix]
+    set output_prefix [dict get $p output_prefix]
 
     outputname      $output_prefix
     structure       [dict get $p structure]

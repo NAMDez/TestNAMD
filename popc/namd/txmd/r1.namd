@@ -1,0 +1,116 @@
+source module/Apps.tm
+
+######################################################
+# Temperature exchange MD (NPT)
+#
+# Author: Steven(Yuhang) Wang
+# License: CC BY 4.0 (creativecommons.org/licenses/by/4.0)
+# Date:   01/19/2018
+######################################################
+
+set stage     1
+set pre       [::expr $stage - 1]
+set isRestart [::expr $stage > 1 ? true : false]
+set root_dir "../.."
+
+set replicaId      [::myReplica]
+set save_freq      100
+set em_steps       20
+set total_steps    200
+set block_steps    20
+set input_dir      "${root_dir}/output/md${pre}/${replicaId}"
+set output_dir     "${root_dir}/output/md${stage}/${replicaId}"
+file mkdir $output_dir
+
+set T_min 300
+set T_max 350
+set Ts [::_::tk::math::range $T_min $T_max [::expr double($T_max - $T_min)/[::numReplicas]]]
+set temperature [::lindex $Ts $replicaId]
+puts "=== Ts = $Ts"
+
+::namd::IO [::dict create \
+    structure       "${root_dir}/system/system.psf" \
+    coordinates     "${root_dir}/system/system.pdb" \
+    output_prefix   "${output_dir}/md${stage}.${replicaId}" \
+    input_prefix    "${input_dir}/md${pre}.${replicaId}.restart" \
+    isRestart       $isRestart \
+]
+
+::namd::forceField charmm [::list \
+    "${root_dir}/forcefield/par_all36m_prot.prm" \
+    "${root_dir}/forcefield/par_all36_na.prm" \
+    "${root_dir}/forcefield/par_all36_lipid.prm" \
+    "${root_dir}/forcefield/par_all36_carb.prm" \
+    "${root_dir}/forcefield/par_all36_cgenff.prm" \
+    "${root_dir}/forcefield/toppar_water_ions.str" \
+]
+
+::namd::usePBC [::dict create \
+    size         {96.499527 98.471176 78.690826} \
+    center       {0 0 0} \
+    isRestart    $isRestart \
+]
+
+::namd::interaction [::dict create \
+    switch_dist    10.0 \
+    cutoff         12.0 \
+    pair_list_dist 13.5 \
+]
+
+::namd::outputFrequency [::dict create \
+    dcd          $save_freq \
+    restart      $save_freq \
+    xst          $save_freq \
+    energy       $save_freq \
+    pressure     $save_freq \
+]
+
+::namd::integrator [::dict create \
+    time_step     2.0 \
+]
+    
+::namd::usePME [::dict create \
+    spacing       1.0 \
+]
+
+::namd::T [::dict create \
+    T $temperature \
+    isRestart $isRestart \
+]
+
+::namd::LangevinT [::dict create \
+    T             $temperature \
+]
+
+::namd::LangevinP [::dict create \
+    flexible_cell  no \
+    constant_area  no \
+    constant_ratio no \
+    T              $temperature \
+]
+
+::namd::minimize  $em_steps
+::namd::resetVel  $temperature
+::namd::resetTime 0
+
+#=============================================
+
+set rx_specs [::dict create \
+    variable T \
+    algorithm MH \
+    params [::dict create \
+        Ts $Ts \
+    ] \
+]
+
+# note: must use LangevinT because
+# temperature reassignment
+::namd::rx::run [::dict create \
+    steps [::dict create \
+        total $total_steps \
+        block $block_steps \
+    ] \
+    state "../output/md${stage}/$replicaId/md${stage}.state" \
+    rx  $rx_specs\
+]
+

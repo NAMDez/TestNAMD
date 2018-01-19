@@ -36,9 +36,9 @@ set md_steps       1000
     "$root_dir/forcefield/toppar_water_ions.str" \
 ]
 
-::namd::usePBC [::dict create \
-    size         {108.86 108.86 77.758} \
-    center       {0 0 0} \
+::namd::usePBC [dict create \
+    size         {178.299 131.542 132.362} \
+    center       {90.344 73.992 68.909} \
     isRestart    $isRestart \
 ]
 
