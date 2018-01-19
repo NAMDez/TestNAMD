@@ -1,0 +1,27 @@
+
+
+A) "system" folder 
+System: POPC membrane
+- 294 lipids (147 on each leaflet of the bilayer)
+- 200 mM NaCl
+- 77406 atoms total   
+- file names: popc.psf and popc.pdb 
+
+B) "namd" folder 
+Simulation configurations  
+- eqpopcfsw.conf (vdW force switching on) and eqpopc.conf (vdW force switching off)
+- simulation conditions: 310K, 1atm (NPT ensemble)   
+- 5-ns simulation time
+
+Log files generated (*log) 
+
+C) "output" folder 
+- *coor, *dcd, *vel, *xsc, *xst   
+- *dat :total energy, potential energy, pressure, temperature, area, volume, vdW energy and electrocstatic energy 
+
+
+D) major differences 
+- Total energy, potential energy and vdW energy values are more positive when vdW force switching is on. VdW energies are about zero kcal/mol. 
+- Area and Volume are larger when vdW force switching is on.
+
+       
