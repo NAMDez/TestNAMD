@@ -12,7 +12,6 @@ set stage     1
 set pre       [::expr $stage - 1]
 set isRestart [::expr $stage > 1 ? true : false]
 set root_dir "../.."
-exec mkdir -p "$root_dir/output/md${stage}"
 
 set replicaId      [::myReplica]
 set save_freq      100
@@ -21,6 +20,8 @@ set total_steps    200
 set block_steps    20
 set input_dir      "../output/md${pre}/${replicaId}"
 set output_dir     "../output/md${stage}/${replicaId}"
+file mkdir $output_dir
+
 set T_min 300
 set T_max 350
 set Ts [::_::tk::math::range $T_min $T_max [::expr double($T_max - $T_min)/[::numReplicas]]]
@@ -33,7 +34,6 @@ puts "=== Ts = $Ts"
     output_prefix   "${output_dir}/md${stage}.${replicaId}" \
     input_prefix    "${input_dir}/md${pre}.${replicaId}.restart" \
     isRestart       $isRestart \
-    isReplica       true \
 ]
 
 ::namd::forceField charmm [::list \
@@ -45,11 +45,12 @@ puts "=== Ts = $Ts"
     "$root_dir/forcefield/toppar_water_ions.str" \
 ]
 
-::namd::usePBC [::dict create \
-    size         {108.86 108.86 77.758} \
+::namd::usePBC [dict create \
+    size         {180 140 140} \
     center       {0 0 0} \
     isRestart    $isRestart \
 ]
+
 
 ::namd::interaction [::dict create \
     switch_dist    10.0 \

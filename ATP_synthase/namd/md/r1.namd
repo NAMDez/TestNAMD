@@ -37,8 +37,8 @@ set md_steps       1000
 ]
 
 ::namd::usePBC [dict create \
-    size         {178.299 131.542 132.362} \
-    center       {90.344 73.992 68.909} \
+    size         {180 140 140} \
+    center       {0 0 0} \
     isRestart    $isRestart \
 ]
 
