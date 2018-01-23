@@ -21,7 +21,7 @@ proc ::namd::gridForce {param_list} {
         scaling_column O \
         charge_column  B \
         volt           no \
-        dx             undefined \
+        grid             undefined \
         label          undefined \
         pbc            {no no no} \
         scaling        {1 1 1} \
@@ -35,9 +35,9 @@ proc ::namd::gridForce {param_list} {
             ::namd::tk::dict::assertDictKeyLegal $defaults $params "::namd::gridForce"
             set p [dict merge $defaults $params]
             set grid_label_file [::dict get $p label]
-            set grid_dx_file    [::dict get $p dx]
+            set grid_file    [::dict get $p grid]
 
-            foreach f [list $grid_dx_file $grid_label_file] {            
+            foreach f [list $grid_file $grid_label_file] {            
                 if {![file exists $f]} {
                     error "== file $f doesn't exist."
                 }
@@ -51,7 +51,7 @@ proc ::namd::gridForce {param_list} {
             mgridForceCol       $tag     O
             mgridForceChargeCol $tag     B
             mgridForceVolts     $tag     [dict get $p volt]
-            mgridForcePotFile   $tag     $grid_dx_file
+            mgridForcePotFile   $tag     $grid_file
             mgridForceScale     $tag     $sx $sy $sz
             mgridForceCont1     $tag     $pbc_x
             mgridForceCont2     $tag     $pbc_y

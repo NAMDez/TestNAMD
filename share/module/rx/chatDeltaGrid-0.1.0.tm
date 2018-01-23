@@ -1,5 +1,4 @@
 namespace eval ::namd::rx {}
-source module/const/kB-0.1.0.tm
 
 #----------------------------------------------------------------------
 # communicate with neighbors to get the 
@@ -7,33 +6,39 @@ source module/const/kB-0.1.0.tm
 # Args:
 # thisAddress (int): this address
 # otherAddress (int): neighbor's address
-# deltaE_self (float): change in grid energy
-#       before and after the exchange
-# T (float): temperature
+# info (dict): a dictionary about E and T
+#   example: {E_old 10 E_new 11 T 300}
 #----------------------------------------------------------------------
 
-proc ::namd::rx::chatDeltaGrid {thisAddress otherAddress deltaE_self T} {
-    puts "=== chatDeltaGrid thisAddress = $thisAddress otherAddress = $otherAddress"
-    set kB [::namd::const::kB] ;# kcal/mol/K
+proc ::namd::rx::chatDeltaGrid {thisAddress otherAddress info} {
     #----------------------------------------------
     # If the otherAddress is on the left, do `send`.
     # If the otherAddress is on the right, do 'receive'.
-    # If the otherAddress is itself, do nothing.
+    # If the otherAddress is itself, return the identity info dictionary
     #----------------------------------------------
     if {$thisAddress > $otherAddress} {
-        ::replicaSend $deltaE_self $otherAddress
+        ::replicaSend $info $otherAddress
         return {}
     } elseif {$thisAddress < $otherAddress} {
-        set deltaE_other [::replicaRecv $otherAddress]
-        set dE [expr ($deltaE_self + $deltaE_other)]
-        puts "=== dE = $dE"
-        return [list [expr $dE/($T*$kB)]]
+        set info2 [::replicaRecv $otherAddress]
+        return [::dict create\
+            E1 [::dict create \
+                old [::dict get $info E_old] \
+                new [::dict get $info E_new] \
+            ] \
+            E2 [::dict create \
+                old [::dict get $info2 E_old] \
+                new [::dict get $info2 E_new] \
+            ] \
+            T1 [::dict get $info T] \
+            T2 [::dict get $info2 T] \
+        ]
     } else {
         # Because the energy difference between one
         # replica and itself is exactly zero.
         # This is true when one replica is compared
         # to itself because it is the first or the last
         # replica.
-        return [list 0]
+        return {E1 {old 0 new 0} E2 {old 0 new 0} T1 1 T2 1}
     }
 }

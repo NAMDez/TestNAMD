@@ -29,6 +29,7 @@ proc ::namd::rx::main { \
     set root_name [::file rootname $state_file]
     set thisAddress [::myReplica]
     set history_file ${root_name}.${thisAddress}.history
+    set exchange_rate_file ${root_name}.${thisAddress}.xrate
 
     ::_::io::write $state_file ""
     ::_::io::write $history_file ""
@@ -38,6 +39,7 @@ proc ::namd::rx::main { \
     
     ::namd::logInfoSetUp
     set ccc 0
+    set ccc_exchange 0
 
     while {$ccc < $N} {
         if {[llength $replicaInfo] == 0} {
@@ -66,6 +68,7 @@ proc ::namd::rx::main { \
         # update reaction coordinate
         if {$newState != $oldState} {
             ::namd::rx::update $oldState $newState $rx_specs
+            incr ccc_exchange
         }
 
         # save history (for later trajectory sorting)
@@ -75,4 +78,6 @@ proc ::namd::rx::main { \
 
         incr ccc
     }
+    set exchange_rate [expr double($ccc_exchange) / double($N)]
+    ::_::io::write $exchange_rate_file "$exchange_rate $ccc_exchange $N"
 }

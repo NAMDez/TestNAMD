@@ -38,18 +38,24 @@ proc ::namd::rx::deltaT {neighborAddress \
         return {}
     } elseif {$thisAddress < $neighborAddress} {
         set otherE [::replicaRecv $neighborAddress]
-        set dE [expr $thisE - $otherE]
-        set inverse_dT [expr (1.0/$thisT) - (1.0/$otherT)] 
-        set factor [expr $dE * (1.0/$kB) * $inverse_dT]
-        puts "=== dE = $dE"
-        puts "=== delta-factor = $factor"
-        return [list $factor]
+        return [::dict create\
+            E1 [::dict create \
+                old $thisE \
+                new $thisE \
+            ] \
+            E2 [::dict create \
+                old $otherE \
+                new $otherE \
+            ] \
+            T1 $thisT \
+            T2 $otherT \
+        ]
     } else {
         # Because the energy difference between one
         # replica and itself is exactly zero.
         # This is true when one replica is compared
         # to itself because it is the first or the last
         # replica.
-        return [list 0]
+        return {E1 {old 0 new 0} E2 {old 0 new 0} T1 1 T2 1}
     }
 }

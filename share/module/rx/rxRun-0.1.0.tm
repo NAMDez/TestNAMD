@@ -31,9 +31,7 @@ proc ::namd::rx::run {params} {
         rx [::dict create \
             variable undefined \
             algorithm undefined \
-            params [dict create \
-                T undefined \
-            ] \
+            params {} \
         ] \
     ]
 
@@ -47,28 +45,13 @@ proc ::namd::rx::run {params} {
         puts "=== restart replica: $replicaInfo"
     }
 
-    if {[::dict get $p rx variable] eq "grid"} {
-        # initialize the grids
-        set grid_tags [::namd::rx::initializeGrid [::dict get $p rx]]
-        set rx_specs [::_::dict::merge \
-            [::dict get $p rx] \
-            [::dict create \
-                params [::dict create \
-                    grid_tags $grid_tags \
-                ] \
-            ] \
-        ]
-    } else  {
-        set rx_specs [::dict get $p rx]
-    }
-
     ::replicaBarrier
     ::namd::rx::main \
         $replicaInfo \
         [::dict get $p steps total] \
         [::dict get $p steps block] \
         [::dict get $p state] \
-        $rx_specs
+        [::dict get $p rx]
     ::replicaBarrier
 }
 

@@ -12,6 +12,9 @@ source module/rx/delta-0.1.0.tm
 #   rx_specs (dict): specification of replica-exchange
 #---------------------------------------------------
 proc ::namd::rx::swap? {neighborAddress thisState neighborState rx_specs} {
+    # special cases: 
+    # (1) single replica
+    # (2) boundary replica
     if {[::numReplicas] == 1 || [::myReplica] == $neighborAddress} {
         return false
     }
@@ -28,7 +31,7 @@ proc ::namd::rx::swap? {neighborAddress thisState neighborState rx_specs} {
         error "(from ::namd::rx::swap?) unknown replica exchange algorithm \"$algorithm\""
     }
 
-    set diff [::namd::rx::delta \
+    set info [::namd::rx::delta \
         $neighborAddress \
         $thisState \
         $neighborState \
@@ -36,9 +39,8 @@ proc ::namd::rx::swap? {neighborAddress thisState neighborState rx_specs} {
         [::dict get $rx_specs params] \
     ]
 
-    if {[llength $diff] > 0} {
-        set delta_factor [lindex $diff 0]
-        set decision [$rxAlgorithm $delta_factor]
+    if {[llength $info] > 0} {
+        set decision [$rxAlgorithm $info]
         # send swapping decision to its neighbor
         ::replicaSend $decision $neighborAddress
         return $decision
