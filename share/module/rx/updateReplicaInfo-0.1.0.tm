@@ -13,7 +13,7 @@ proc ::namd::rx::updateReplicaInfo {activeNeighbor otherNeighbor newAddress repl
     # note: $activeNeighbor will move here
     #   and $otherNeigbor will move to somewhere (need to send a message to ask)
     set thisAddress  [::myReplica]
-    set otherNeighborAddress [dict get $replicaInfo \
+    set otherNeighborAddress [::dict get $replicaInfo \
         $otherNeighbor address]
     set msg "$newAddress"
 

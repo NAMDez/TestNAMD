@@ -1,12 +1,11 @@
 namespace eval ::namd::rx {namespace export run}
-source module/rx/initializeReplicaInfo-0.1.0.tm
 source module/rx/main-0.1.0.tm
+source module/rx/rxRestart-0.1.0.tm
 source module/rx/initializeGrid-0.1.0.tm
 source module/tk/io/write-0.1.0.tm
 source module/tk/io/appendln-0.1.0.tm
 source module/tk/dict/assertDictKeyLegal-0.1.0.tm
 source module/tk/dict/nestedDictMerge-0.1.0.tm
-source module/tk/io/readAll-0.1.0.tm
 
 #----------------------------------------------------
 # NAMD Replica Exchange
@@ -38,12 +37,7 @@ proc ::namd::rx::run {params} {
     ::namd::tk::dict::assertDictKeyLegal $defaults $params "::namd::rx::run"
     set p [::_::dict::merge $defaults $params]
     
-    if {[::dict get $p restart] eq ""} {
-        set replicaInfo [::namd::rx::initializeReplicaInfo]
-    } else {
-        set replicaInfo [::_::io::readAll [::dict get $p restart]]
-        puts "=== restart replica: $replicaInfo"
-    }
+    set replicaInfo [::namd::rx::restart $p]
 
     ::replicaBarrier
     ::namd::rx::main \

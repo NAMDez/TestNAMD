@@ -32,5 +32,9 @@ proc ::namd::rx::initializeReplicaInfo {} {
             address $right \
           ] \
         step 0 \
+        attempt 0 \
+        exchange 0 \
     ]
+    # note: "exchange": number of successful exchanges
+    #   "attempt": which replica exchange attempt
 }

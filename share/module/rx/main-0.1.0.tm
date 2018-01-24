@@ -5,6 +5,7 @@ source module/rx/rxSaveState-0.1.0.tm
 source module/rx/rxUpdate-0.1.0.tm 
 source module/tk/io/write-0.1.0.tm
 source module/tk/io/appendln-0.1.0.tm
+source module/tk/dict/nestedDictMerge-0.1.0.tm
 
 
 #------------------------------------------------
@@ -33,51 +34,63 @@ proc ::namd::rx::main { \
 
     ::_::io::write $state_file ""
     ::_::io::write $history_file ""
+    ::_::io::write $exchange_rate_file ""
 
     # Total number of exchange attempts
     set N [expr int($total_steps/$block_steps)]
     
     ::namd::logInfoSetUp
-    set ccc 0
-    set ccc_exchange 0
-
-    while {$ccc < $N} {
+    
+    set attempt [::dict get $replicaInfo attempt]
+    while {$attempt < $N} {
         if {[llength $replicaInfo] == 0} {
             error ">>>> address $thisAddress:: \
                 exchange $ccc, replicaInfo = $replicaInfo"
             exit
         }
 
-        set oldState [::dict get $replicaInfo state]
-        set oldStep  [::dict get $replicaInfo step]
+        set old_state [::dict get $replicaInfo state]
+        set old_step  [::dict get $replicaInfo step]
+        set old_num_exchanges [::dict get $replicaInfo exchange]
 
         # save the current replica info before the new run
         ::namd::rx::saveState ${state_file}.old $replicaInfo
 
         # Run some MD steps
         ::namd::run $block_steps
-        set step [expr $oldStep + $block_steps]
 
         # attempt exchange
+        incr attempt
+        set step [expr $old_step + $block_steps]
         set replicaInfo [::namd::rx::negotiate \
-            $ccc $step $replicaInfo $rx_specs]
+            $attempt $step $replicaInfo $rx_specs]
+        set new_state [::dict get $replicaInfo state]
+
+        # update reaction coordinate
+        if {$new_state != $old_state} {
+            ::namd::rx::update $old_state $new_state $rx_specs
+
+            set new_num_exchanges [expr $old_num_exchanges + 1]
+            set replicaInfo [::_::dict::merge \
+                $replicaInfo \
+                [::dict create exchange $new_num_exchanges] \
+            ]
+        }
 
         # save new replica info
         ::namd::rx::saveState $state_file $replicaInfo
-        set newState [::dict get $replicaInfo state]
-        # update reaction coordinate
-        if {$newState != $oldState} {
-            ::namd::rx::update $oldState $newState $rx_specs
-            incr ccc_exchange
-        }
 
         # save history (for later trajectory sorting)
-        ::_::io::appendln $history_file "$step $newState $newState $thisAddress"
+        ::_::io::appendln $history_file "$step $new_state $new_state $thisAddress"
 
-        puts ">>> step = $step newState = $newState"
-
-        incr ccc
+        # save exchange rate (progressive)
+        set num_attempts  [::dict get $replicaInfo attempt]
+        set num_exchanges [::dict get $replicaInfo exchange]
+        set exchange_rate [format "%.2f" \
+            [expr double($num_exchanges) / double($num_attempts)]]
+        ::_::io::appendln $exchange_rate_file \
+            "$step $num_attempts $num_exchanges $exchange_rate"
+        
+        puts ">>> step = $step new_state = $new_state"
     }
-    set exchange_rate [expr double($ccc_exchange) / double($N)]
-    ::_::io::write $exchange_rate_file "$exchange_rate $ccc_exchange $N"
 }
